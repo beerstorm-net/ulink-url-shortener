@@ -1,0 +1,46 @@
+// used for AuthBloc
+enum ORIGIN {
+  LOGIN,
+  LOGOUT,
+  RELOAD,
+  REFRESH_TOKEN,
+}
+
+// used for SharedPreferences
+enum PREFKEY {
+  SETTINGS_DEBUG,
+  SETTINGS_BIOMETRICS,
+  APP_BIOMETRICS,
+  APP_USERID,
+  APP_USER,
+  APP_LANGCODE,
+  NOINTERNET,
+  DEVICEINFO,
+  DEVICEPLATFORM,
+  WELCOME_USER
+}
+Map<PREFKEY, String> PREFKEYS = {
+  PREFKEY.SETTINGS_DEBUG: "APP_SETTINGS_DEBUG",
+  PREFKEY.SETTINGS_BIOMETRICS: "APP_SETTINGS_BIOMETRICS",
+  PREFKEY.APP_BIOMETRICS: "APP_BIOMETRICS",
+  PREFKEY.APP_USERID: "APP_USERID",
+  PREFKEY.APP_USER: "APP_USER",
+  PREFKEY.APP_LANGCODE: "APP_LANGCODE",
+  PREFKEY.NOINTERNET: "NO_INTERNET",
+  PREFKEY.DEVICEINFO: "DEVICE_INFO",
+  PREFKEY.DEVICEPLATFORM: "DEVICE_PLATFORM",
+  PREFKEY.WELCOME_USER: "WELCOME_USER",
+};
+
+// TODO: revisit the structure, e.g. import from json
+//String API_BASE = "https://api.ulink.no";
+String API_HEADER_TOKEN = "Authorization"; // value: "Bearer API_TOKEN"
+String API_USERS = "/users"; // POST
+String API_REFRESH_TOKEN = "/authentication"; // POST
+String API_CURRENT_USER = "/users"; // GET
+String API_LINKS = "/links"; // GET
+String API_LINKS_ADD = "/links"; // POST
+//String API_LINKS_DELETE = "/links/:id"; // DELETE
+//String API_LINKS_UPDATE = "/links/:id"; // PUT
+
+Duration REFRESH_TOKEN_TIMER = Duration(days: 8);
