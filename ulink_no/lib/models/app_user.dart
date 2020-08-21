@@ -52,20 +52,20 @@ class AppUser {
   static AppUser fromSnapshot(DocumentSnapshot snap) {
     AppUser appUser = new AppUser();
 
-    appUser.uid = snap.documentID;
-    appUser.createdAt = snap.data.containsKey('createdAt')
-        ? snap.data['createdAt'] as String
+    appUser.uid = snap.id; //.documentID;
+    appUser.createdAt = snap.data().containsKey('createdAt')
+        ? snap.data()['createdAt'] as String
         : '';
-    appUser.updatedAt = snap.data.containsKey('updatedAt')
-        ? snap.data['updatedAt'] as String
+    appUser.updatedAt = snap.data().containsKey('updatedAt')
+        ? snap.data()['updatedAt'] as String
         : '';
     appUser.email =
-        snap.data.containsKey('email') ? snap.data['email'] as String : '';
-    appUser.displayName = snap.data.containsKey('displayName')
-        ? snap.data['displayName'] as String
+        snap.data().containsKey('email') ? snap.data()['email'] as String : '';
+    appUser.displayName = snap.data().containsKey('displayName')
+        ? snap.data()['displayName'] as String
         : '';
-    appUser.photoUrl = snap.data.containsKey('photoUrl')
-        ? snap.data['photoUrl'] as String
+    appUser.photoUrl = snap.data().containsKey('photoUrl')
+        ? snap.data()['photoUrl'] as String
         : '';
 
     // NB! not used by the client

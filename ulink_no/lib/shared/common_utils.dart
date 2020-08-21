@@ -32,6 +32,10 @@ class CommonUtils {
     return (source == null || source.isEmpty || source == "null") ? "" : source;
   }
 
+  static String nullSafeSnap(dynamic source) {
+    return source != null ? nullSafe(source as String) : "";
+  }
+
   static String generateUuid() {
     var uuid = Uuid();
     return uuid.v5(Uuid.NAMESPACE_URL, 'beerstorm.net');

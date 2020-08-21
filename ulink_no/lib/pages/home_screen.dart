@@ -1,9 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ulink/blocs/auth/auth_bloc.dart';
 import 'package:ulink/models/app_user.dart';
-import 'package:ulink/shared/app_defaults.dart';
 import 'package:ulink/shared/common_utils.dart';
 
 import '../blocs/settings/settings_bloc.dart';
@@ -31,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     // if necessary, also listen to when first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      //TODO _checkRefreshToken();
+      _checkRefreshToken();
     });
 
     // listen to app states
@@ -54,8 +52,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
 
-    _refreshTokenTimer?.cancel();
-    _refreshTokenTimer = null;
+    //_refreshTokenTimer?.cancel();
+    //_refreshTokenTimer = null;
 
     super.dispose();
   }
@@ -71,18 +69,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
    */
   _checkRefreshToken() {
-    AppUser appUser = widget._userRepository.sharedPrefUtils.prefsGetUser();
+    //AppUser appUser = widget._userRepository.sharedPrefUtils.prefsGetUser();
+    AppUser appUser = widget._userRepository.hiveStore.readAppUser();
     CommonUtils.checkRefreshToken(context, appUser);
   }
 
+  /* // NB! usable for short-lived tokens! uLINK token TTL is up-to 1 year!
   Timer _refreshTokenTimer;
   _initRefreshTokenTimer(context) {
     _refreshTokenTimer = Timer.periodic(REFRESH_TOKEN_TIMER, (timer) {
       // check if token requires refresh, trigger event if time came
-      AppUser appUser = widget._userRepository.sharedPrefUtils.prefsGetUser();
+      //AppUser appUser = widget._userRepository.sharedPrefUtils.prefsGetUser();
+      AppUser appUser =
+          widget._userRepository.hiveStore.read(PREFKEYS[PREFKEY.APP_USER]);
       CommonUtils.checkRefreshToken(context, appUser);
     });
-  }
+  } */
 
   @override
   Widget build(BuildContext buildContext) {
@@ -145,10 +147,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         padding: EdgeInsets.symmetric(vertical: 1.0, horizontal: 4.0),
         child: Center(
           child: RepositoryProvider(
-            lazy: false,
-            create: (buildContext) => widget._userRepository,
-            child: Text('TODO: Main Screen'), // FIXME: build main screen
-          ),
+              lazy: false,
+              create: (buildContext) => widget._userRepository,
+              child: BlocListener<AuthBloc, AuthState>(
+                listener: (context, state) {
+                  if (state is RefreshTokenState) {
+                    CommonUtils.logger.d('RefreshTokenState: $state');
+                  }
+                },
+                listenWhen: (prev, current) {
+                  return current is RefreshTokenState;
+                },
+                child: Text('TODO: Main Screen'), // FIXME: build main screen
+              )),
           //child: isGoogleMap ? Loc8GoogleMap() : Loc8OpenMap(),
         ),
       ),

@@ -7,16 +7,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
-import 'package:package_info/package_info.dart';
 
 import '../blocs/auth/auth_error.dart';
 import '../models/app_user.dart';
 import '../shared/app_defaults.dart';
 import '../shared/common_utils.dart';
+import '../shared/hive_store.dart';
 import '../shared/screen_size_config.dart';
 import '../shared/shared_preferences.dart';
-import '../shared/shared_preferences_utils.dart';
 import '../widgets/apple_sign_in_available.dart';
 import 'app_user.dart';
 
@@ -25,30 +25,32 @@ class UserRepository {
   final AppleSignInAvailable _appleSignInAvailable;
   final SharedPref _sharedPref;
   final RemoteConfig _remoteConfig;
-  final SharedPrefUtils _sharedPrefUtils;
+  //final SharedPrefUtils _sharedPrefUtils;
+
+  final HiveStore _hiveStore;
 
   ScreenSizeConfig screenSizeConfig = ScreenSizeConfig();
   // NB! screenSizeConfig.init(context) MUST be called from inside MaterialApp build
 
-  //RateMyApp _rateMyApp;
-  // NB! MUST initialized once in main!
-
-  var usersCollection = Firestore.instance.collection("users");
+  var usersCollection = FirebaseFirestore.instance.collection("users");
   void setCollectionName(String collectionName) {
-    usersCollection = Firestore.instance.collection(collectionName);
+    usersCollection = FirebaseFirestore.instance.collection(collectionName);
   }
 
-  static initSharedPrefUtils(sharedPref) => SharedPrefUtils(sharedPref);
+  //static initSharedPrefUtils(sharedPref) => SharedPrefUtils(sharedPref);
+  static initHiveStore(hiveBox) => HiveStore(hiveBox: hiveBox);
   UserRepository(
       {FirebaseAuth firebaseAuth,
-      AppleSignInAvailable appleSignInAvailable,
-      SharedPref sharedPref,
-      RemoteConfig remoteConfig})
+      @required AppleSignInAvailable appleSignInAvailable,
+      @required SharedPref sharedPref,
+      @required RemoteConfig remoteConfig,
+      @required Box hiveBox})
       : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
         _appleSignInAvailable = appleSignInAvailable,
+        _remoteConfig = remoteConfig,
         _sharedPref = sharedPref ?? new SharedPref(),
-        _sharedPrefUtils = initSharedPrefUtils(sharedPref),
-        _remoteConfig = remoteConfig;
+        //_sharedPrefUtils = initSharedPrefUtils(sharedPref),
+        _hiveStore = initHiveStore(hiveBox);
 
   // (optional) this can be used when _sharedPref is not init already, aka not passed as ready
   initSharedPref() async {
@@ -58,7 +60,8 @@ class UserRepository {
   }
 
   SharedPref get sharedPref => _sharedPref;
-  SharedPrefUtils get sharedPrefUtils => _sharedPrefUtils;
+  //SharedPrefUtils get sharedPrefUtils => _sharedPrefUtils;
+  HiveStore get hiveStore => _hiveStore;
 
   AppleSignInAvailable get appleSignInAvailable => _appleSignInAvailable;
 
@@ -83,7 +86,7 @@ class UserRepository {
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
       if (googleAuth.accessToken != null && googleAuth.idToken != null) {
-        final AuthResult authResult = await _firebaseAuth
+        final UserCredential authResult = await _firebaseAuth
             .signInWithCredential(GoogleAuthProvider.getCredential(
           idToken: googleAuth.idToken,
           accessToken: googleAuth.accessToken,
@@ -129,8 +132,9 @@ class UserRepository {
     switch (result.status) {
       case AuthorizationStatus.authorized:
         final appleIdCredential = result.credential;
-        final oAuthProvider = OAuthProvider(providerId: 'apple.com');
-        final credential = oAuthProvider.getCredential(
+        final oAuthProvider = OAuthProvider('apple.com');
+        final credential = oAuthProvider.credential(
+          //.getCredential(
           idToken: String.fromCharCodes(appleIdCredential.identityToken),
           accessToken:
               String.fromCharCodes(appleIdCredential.authorizationCode),
@@ -144,18 +148,11 @@ class UserRepository {
         CommonUtils.logger.d(
             'appleIdCredential response: ${appleIdCredential.toMap().toString()}');
         if (appleIdCredential.fullName != null) {
-          UserUpdateInfo updateUser = UserUpdateInfo();
-          /*
-          updateUser.displayName =
-              '${appleIdCredential.fullName.givenName.nullSafeString}';
-          updateUser.displayName +=
-              '${appleIdCredential.fullName.familyName.nullSafeString}';
-          */
-          updateUser.displayName =
+          String displayName =
               '${CommonUtils.nullSafe(appleIdCredential.fullName.givenName)}';
-          updateUser.displayName +=
+          displayName +=
               '${CommonUtils.nullSafe(appleIdCredential.fullName.familyName)}';
-          firebaseUser.updateProfile(updateUser);
+          firebaseUser.updateProfile(displayName: displayName);
         }
         AppUser appUser = _firebaseUserToAppUser(
             firebaseUser,
@@ -188,10 +185,27 @@ class UserRepository {
     final String API_BASE = remoteConfig.getString('ulink_api_url');
     String reqUrl = API_BASE + API_USERS;
 
-    final response = await http.post(reqUrl, body: {
-      "userid": appUser.email.toLowerCase(),
-      "password": appUser.uid,
-    });
+    if (CommonUtils.nullSafe(appUser.uid).isEmpty ||
+        CommonUtils.nullSafe(appUser.email).isEmpty) {
+      CommonUtils.logger
+          .w('empty appUser!!! ${appUser.uid} - ${appUser.email}');
+      return appUser;
+    }
+
+    Map<String, dynamic> data = Map()
+      ..putIfAbsent("userid", () => appUser.email.toLowerCase())
+      ..putIfAbsent("password", () => appUser.uid.toLowerCase())
+      ..putIfAbsent(
+          "extra", () => Map()..putIfAbsent("appName", () => "uLINK-iOS"));
+    var body = jsonEncode(data);
+    final response = await http.post(reqUrl,
+        headers: {"Content-Type": "application/json"}, body: body
+        /*body: {
+          "userid": appUser.email.toLowerCase(),
+          "password": appUser.uid.toLowerCase(),
+          "extra": {"appName": "uLINK-iOS"}
+        }*/
+        );
     if (response.statusCode <= 201) {
       Map<String, dynamic> responseJson = json.decode(response.body);
       if (responseJson.containsKey('_id')) {
@@ -248,11 +262,19 @@ class UserRepository {
 
     await ensureApiUser(appUser: appUser);
 
-    final response = await http.post(reqUrl, body: {
-      "strategy": "local",
-      "userid": appUser.email.toLowerCase(),
-      "password": appUser.uid
-    });
+    Map<String, dynamic> data = Map()
+      ..putIfAbsent("strategy", () => "local")
+      ..putIfAbsent("userid", () => appUser.email.toLowerCase())
+      ..putIfAbsent("password", () => appUser.uid.toLowerCase());
+    var body = jsonEncode(data);
+    final response = await http.post(reqUrl,
+        headers: {"Content-Type": "application/json"}, body: body
+        /*body: {
+          "strategy": "local",
+          "userid": appUser.email.toLowerCase(),
+          "password": appUser.uid.toLowerCase(),
+        }*/
+        );
     if (response.statusCode <= 201) {
       Map<String, dynamic> responseJson = json.decode(response.body);
       appUser.token = responseJson.containsKey('accessToken')
@@ -281,8 +303,10 @@ class UserRepository {
         isPhysicalDevice =
             await CommonUtils.isPhysicalDevice(devicePlatform: devicePlatform);
       }
-      sharedPrefUtils.prefsDebug(isPhysicalDevice);
-      sharedPrefUtils.prefsDevicePlatform(devicePlatform);
+      //sharedPrefUtils.prefsDebug(isPhysicalDevice);
+      //sharedPrefUtils.prefsDevicePlatform(devicePlatform);
+      hiveStore.save(PREFKEYS[PREFKEY.SETTINGS_DEBUG], isPhysicalDevice);
+      hiveStore.save(PREFKEYS[PREFKEY.DEVICEPLATFORM], devicePlatform);
     } on Exception catch (_) {}
   }
 
@@ -300,19 +324,19 @@ class UserRepository {
   }
 
   Future<bool> isSignedIn() async {
-    final currentUser = await _firebaseAuth.currentUser();
+    final currentUser = await _firebaseAuth.currentUser;
     return currentUser != null;
   }
 
   Future<String> getUser() async {
-    FirebaseUser currentUser = await _firebaseAuth.currentUser();
+    User currentUser = _firebaseAuth.currentUser;
     return (currentUser.displayName.isNotEmpty)
         ? currentUser.displayName
         : currentUser.email;
   }
 
   Future<AppUser> getAppUser() async {
-    FirebaseUser currentUser = await _firebaseAuth.currentUser();
+    User currentUser = _firebaseAuth.currentUser;
     if (currentUser == null || currentUser.uid.isEmpty) {
       return null;
     }
@@ -320,9 +344,9 @@ class UserRepository {
     AppUser appUser;
     var userDoc = await usersCollection
         .where("uid", isEqualTo: "${currentUser?.uid}")
-        .getDocuments();
-    if (userDoc.documents.isNotEmpty) {
-      appUser = AppUser.fromSnapshot(userDoc.documents[0]);
+        .get();
+    if (userDoc.docs.isNotEmpty) {
+      appUser = AppUser.fromSnapshot(userDoc.docs[0]);
     } else {
       appUser = _firebaseUserToAppUser(currentUser, Map());
       appUser = await storeSaveAppUser(appUser);
@@ -331,7 +355,7 @@ class UserRepository {
   }
 
   AppUser _firebaseUserToAppUser(
-      FirebaseUser user, Map<String, dynamic> appleFullName) {
+      User user, Map<String, dynamic> appleFullName) {
     if (user == null) {
       return null;
     }
@@ -347,14 +371,6 @@ class UserRepository {
     CommonUtils.logger.d('appleFullName: ${appleFullName.toString()}');
     if (appUser.displayName.isEmpty && appleFullName.isNotEmpty) {
       appUser.displayName = '';
-      /*
-      appUser.displayName += appleFullName['givenName'].isNotNull
-          ? appleFullName['givenName'].toString().nullSafeString + ' '
-          : "";
-      appUser.displayName += appleFullName['familyName'].isNotNull
-          ? appleFullName['familyName'].toString().nullSafeString
-          : "";
-      */
       appUser.displayName += appleFullName.containsKey('givenName')
           ? CommonUtils.nullSafe(appleFullName['givenName']) + ' '
           : '';
@@ -367,18 +383,19 @@ class UserRepository {
   }
 
   Future<AppUser> storeSaveAppUser(AppUser appUser, {String reason}) async {
-    var userDoc = await usersCollection
-        .where("uid", isEqualTo: "${appUser.uid}")
-        .getDocuments();
-    CommonUtils.logger.d(
-        'checked in FireStore... userExists?: ${userDoc.documents.isNotEmpty}');
-    if (userDoc.documents.isEmpty) {
+    var userDoc =
+        await usersCollection.where("uid", isEqualTo: "${appUser.uid}").get();
+    CommonUtils.logger
+        .d('checked in FireStore... userExists?: ${userDoc.docs.isNotEmpty}');
+    if (userDoc.docs.isEmpty) {
       CommonUtils.logger.d('new user will be added...');
       appUser.createdAt = CommonUtils.getFormattedDate();
       await usersCollection.add(appUser.toJson());
     }
 
-    _sharedPrefUtils.prefsSaveUserId(appUser.uid);
+    _hiveStore.save(PREFKEYS[PREFKEY.APP_USERID], appUser.uid);
+    _hiveStore.save(PREFKEYS[PREFKEY.APP_USER], appUser);
+    //_sharedPrefUtils.prefsSaveUserId(appUser.uid);
     CommonUtils.logger.d('userId added to local prefs...');
 
     return appUser;
@@ -387,30 +404,19 @@ class UserRepository {
   storeUpdateAppUser(String userId, Map<String, dynamic> dataToUpdate,
       {String userDocId}) async {
     if (userDocId == null) {
-      var userDoc = await usersCollection
-          .where('uid', isEqualTo: "$userId")
-          .getDocuments();
-      if (userDoc.documents.isNotEmpty) {
-        userDocId = userDoc.documents[0].documentID;
+      var userDoc =
+          await usersCollection.where('uid', isEqualTo: "$userId").get();
+      if (userDoc.docs.isNotEmpty) {
+        userDocId = userDoc.docs[0].id;
       }
     }
 
     if (userDocId != null) {
       await usersCollection
-          .document(userDocId)
-          .setData(dataToUpdate, merge: true);
+          .doc(userDocId)
+          .set(dataToUpdate, SetOptions(merge: true));
+      //.setData(dataToUpdate, merge: true);
     }
-  }
-
-  Future<Map<String, String>> getPackageInfo() async {
-    Map<String, String> infoMap = Map();
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    infoMap['appName'] = packageInfo.appName;
-    infoMap['packageName'] = packageInfo.packageName;
-    infoMap['version'] = packageInfo.version;
-    infoMap['buildNumber'] = packageInfo.buildNumber;
-
-    return infoMap;
   }
 
   Future<Map> ipInfoDb() async {

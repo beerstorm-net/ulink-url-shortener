@@ -75,7 +75,8 @@ class _OnboardingCarousel extends State<OnboardingCarousel> {
                     .translate('warning_nointernet')));
           } else if (state is AppleSignInAvailableState &&
               state.isAvailable == false) {
-            if (_userRepository.sharedPrefUtils.isIOSPlatform()) {
+            //if (_userRepository.sharedPrefUtils.isIOSPlatform()) {
+            if (_userRepository.hiveStore.isIOSPlatform()) {
               BlocProvider.of<AuthBloc>(context).add(WarnUserEvent(
                   List<String>()..add("alert_message")..add("WARN"),
                   message: AppLocalizations.of(buildContext)

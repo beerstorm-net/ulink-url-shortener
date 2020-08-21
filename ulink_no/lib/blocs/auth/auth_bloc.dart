@@ -28,10 +28,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async* {
     if (event is AppStartedEvent) {
       yield* _mapAppStartedToState();
-    } /*else if (event is LoggedInEvent) {
-      yield* _mapLoggedInToState();
-    }*/
-    else if (event is LogoutEvent) {
+    } else if (event is LogoutEvent) {
       yield* _mapLogoutEventToState();
     } else if (event is LoginWithApplePressed) {
       yield* _mapLoginWithApplePressedToState();
@@ -51,8 +48,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final isSignedIn = await _userRepository.isSignedIn();
       if (isSignedIn) {
         final AppUser appUser = await _userRepository.getAppUser();
-        _userRepository.sharedPrefUtils.prefsSaveUser(appUser);
-        add(RefreshTokenEvent(appUser: appUser));
+
+        _userRepository.hiveStore.save(PREFKEYS[PREFKEY.APP_USER], appUser);
+        //_userRepository.sharedPrefUtils.prefsSaveUser(appUser);
+
+        //add(RefreshTokenEvent(appUser: appUser));
         yield Authenticated(appUser, origin: ORIGIN.RELOAD);
       } else {
         yield Unauthenticated(origin: ORIGIN.RELOAD);
@@ -62,14 +62,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  /*Stream<AuthState> _mapLoggedInToState() async* {
-    final AppUser appUser = await _userRepository.getAppUser();
-    yield Authenticated(appUser);
-  }*/
-
   Stream<AuthState> _mapLogoutEventToState() async* {
-    // NB! wait few seconds so that SettingsScreen closes!!!
-    await Future.delayed(const Duration(milliseconds: 400));
+    // NB! wait a bit so that SettingsScreen is closed!!!
+    await Future.delayed(const Duration(milliseconds: 200));
 
     await _userRepository.signOut();
     yield Unauthenticated(origin: ORIGIN.LOGOUT);
@@ -83,8 +78,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AppUser appUser = await _userRepository.signInWithApple();
       CommonUtils.logger.d('login_bloc.loginSuccess');
 
-      _userRepository.sharedPrefUtils.prefsSaveUser(appUser);
-      add(RefreshTokenEvent(appUser: appUser));
+      _userRepository.hiveStore.save(PREFKEYS[PREFKEY.APP_USER], appUser);
+      //_userRepository.sharedPrefUtils.prefsSaveUser(appUser);
+      //add(RefreshTokenEvent(appUser: appUser));
 
       add(WarnUserEvent(List<String>()..add("progress_stop")));
       yield Authenticated(appUser, origin: ORIGIN.LOGIN);
@@ -112,8 +108,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       CommonUtils.logger.d('login_bloc.loginSuccess');
       //yield LoginState.success();
 
-      _userRepository.sharedPrefUtils.prefsSaveUser(appUser);
-      add(RefreshTokenEvent(appUser: appUser));
+      _userRepository.hiveStore.save(PREFKEYS[PREFKEY.APP_USER], appUser);
+      //_userRepository.sharedPrefUtils.prefsSaveUser(appUser);
+      //add(RefreshTokenEvent(appUser: appUser));
 
       add(WarnUserEvent(List<String>()..add("progress_stop")));
       yield Authenticated(appUser, origin: ORIGIN.LOGIN);
@@ -133,7 +130,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Stream<AuthState> _mapEnrichAppUserToState(EnrichAppUserEvent event) async* {
-    String userId = _userRepository.sharedPrefUtils.prefsGetUserId();
+    //String userId = _userRepository.sharedPrefUtils.prefsGetUserId();
+    String userId =
+        _userRepository.hiveStore.read(PREFKEYS[PREFKEY.APP_USERID]);
     if (userId == null || event.actions == null) {
       return;
     }
@@ -141,8 +140,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Map<String, dynamic> locationInfo = Map();
     if (event.actions.contains('DEVICEINFO')) {
       deviceInfo = await CommonUtils.getBasicDeviceInfo(
+          //devicePlatform: _userRepository.sharedPrefUtils.prefsGetDevicePlatform());
           devicePlatform:
-              _userRepository.sharedPrefUtils.prefsGetDevicePlatform());
+              _userRepository.hiveStore.read(PREFKEYS[PREFKEY.DEVICEPLATFORM]));
     }
 
     if (event.actions.contains('LOCATION')) {
@@ -198,26 +198,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Stream<AuthState> _mapRefreshTokenEventToState(
       RefreshTokenEvent event) async* {
-    AppUser appUser =
-        event.appUser ?? _userRepository.sharedPrefUtils.prefsGetUser();
+    //AppUser appUser = event.appUser ?? _userRepository.sharedPrefUtils.prefsGetUser();
+    AppUser appUser = event.appUser ?? _userRepository.hiveStore.readAppUser();
+    //_userRepository.hiveStore.read(PREFKEYS[PREFKEY.APP_USER]);
     if (appUser != null) {
       appUser = await _userRepository.apiRefreshToken(appUser: appUser);
-      if (appUser.token != null) {
-        _userRepository.sharedPrefUtils.prefsSaveUser(appUser);
+      if (CommonUtils.nullSafe(appUser.token).isNotEmpty) {
+        _userRepository.hiveStore.save(PREFKEYS[PREFKEY.APP_USER], appUser);
+        //_userRepository.sharedPrefUtils.prefsSaveUser(appUser);
 
         Map<String, dynamic> dataToUpdate = Map()
           ..putIfAbsent('token', () => appUser.token)
           ..putIfAbsent('token_created_at', () => appUser.token_created_at);
         _userRepository.storeUpdateAppUser(appUser.uid, dataToUpdate);
 
-        // NB! do we need to yield a state again?
-        yield Authenticated(appUser, origin: ORIGIN.REFRESH_TOKEN);
+        yield RefreshTokenState(appUser: appUser, isRefreshed: true);
+        //yield Authenticated(appUser, origin: ORIGIN.REFRESH_TOKEN);
       } else {
-        yield Unauthenticated(
+        yield RefreshTokenState(appUser: appUser, isRefreshed: false);
+        /*yield Unauthenticated(
             detail: Map()
-              ..putIfAbsent(
-                  'message', () => 'API call failed while refreshToken'),
+              ..putIfAbsent('message', () => 'Error while refreshToken'),
             origin: ORIGIN.REFRESH_TOKEN);
+        */
       }
     }
   }

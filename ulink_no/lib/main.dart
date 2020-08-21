@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:sentry/sentry.dart';
 
 import 'blocs/auth/auth_bloc.dart';
@@ -20,12 +23,19 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Bloc.observer = SimpleBlocObserver();
 
+  await Firebase.initializeApp();
+
   final String devicePlatform = await CommonUtils.getDevicePlatform();
   final bool isPhysicalDevice =
       await CommonUtils.isPhysicalDevice(devicePlatform: devicePlatform);
   final appleSignInAvailable = await AppleSignInAvailable.check();
+
   final SharedPref _sharedPref = SharedPref();
   await _sharedPref.initSharedPreferences();
+
+  await Hive.initFlutter();
+  Box _hiveBox = await Hive.openBox("appBox");
+
   final RemoteConfig _remoteConfig = await RemoteConfig.instance;
   await _remoteConfig.fetch(expiration: const Duration(hours: 24));
   await _remoteConfig.activateFetched();
@@ -68,10 +78,14 @@ Future<void> main() async {
   final UserRepository _userRepository = UserRepository(
       appleSignInAvailable: appleSignInAvailable,
       sharedPref: _sharedPref,
-      remoteConfig: _remoteConfig);
+      remoteConfig: _remoteConfig,
+      hiveBox: _hiveBox);
 
   //_userRepository.sharedPref().clear();
-  Locale appLocale = _userRepository.sharedPrefUtils.prefsGetLocale();
+  //Locale appLocale = _userRepository.sharedPrefUtils.prefsGetLocale();
+  Locale appLocale = _userRepository.hiveStore.readAppLocale();
+  //_userRepository.hiveStore.read(PREFKEYS[PREFKEY.APP_LANGCODE]);
+
   //_userRepository.sharedPrefUtils.prefsDebug(isPhysicalDevice);
   //_userRepository.sharedPrefUtils.prefsDevicePlatform(devicePlatform);
   _userRepository.saveDeviceBasics(

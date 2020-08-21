@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:jiffy/jiffy.dart';
 import 'package:meta/meta.dart';
+import 'package:ulink/shared/app_defaults.dart';
 
 import './bloc.dart';
 import '../../models/user_repository.dart';
@@ -33,8 +34,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
 
   Stream<SettingsState> _mapChangeLocaleToState(AppLocaleEvent event) async* {
     if (event.appLocale != null) {
-      _userRepository.sharedPrefUtils
-          .prefsSaveLocale(event.appLocale.languageCode);
+      //_userRepository.sharedPrefUtils.prefsSaveLocale(event.appLocale.languageCode);
+      _userRepository.hiveStore
+          .save(PREFKEYS[PREFKEY.APP_LANGCODE], event.appLocale.languageCode);
+
       //await Jiffy.locale(event.appLocale.languageCode.startsWith('nb')? 'nb' : event.appLocale.languageCode);
       await Jiffy.locale(event.appLocale.languageCode);
 
@@ -49,9 +52,11 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       DateTime now = DateTime.now();
       String nowStr = dateFormat.format(now);
       if (event.isConnected == false) {
-        _userRepository.sharedPrefUtils.prefsNoInternet(nowStr);
+        //_userRepository.sharedPrefUtils.prefsNoInternet(nowStr);
+        _userRepository.hiveStore.save(PREFKEYS[PREFKEY.NOINTERNET], nowStr);
       } else {
-        _userRepository.sharedPrefUtils.prefsClearNoInternet();
+        //_userRepository.sharedPrefUtils.prefsClearNoInternet();
+        _userRepository.hiveStore.remove(PREFKEYS[PREFKEY.NOINTERNET]);
       }
 
       yield AppConnectivityState(event.isConnected);

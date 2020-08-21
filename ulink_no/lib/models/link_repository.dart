@@ -25,7 +25,9 @@ class LinkRepository {
     String reqUrl = API_BASE + API_LINKS;
     reqUrl += reqUrl.contains('?') ? "&" : "?";
     reqUrl += "page=" + page.toString();
-    AppUser appUser = _userRepository.sharedPrefUtils.prefsGetUser();
+    //AppUser appUser = _userRepository.sharedPrefUtils.prefsGetUser();
+    AppUser appUser = _userRepository.hiveStore.readAppUser();
+    //_userRepository.hiveStore.read(PREFKEYS[PREFKEY.APP_USER]);
 
     final response = await http
         .get(reqUrl, headers: {API_HEADER_TOKEN: 'Bearer ' + appUser.token});
@@ -49,7 +51,9 @@ class LinkRepository {
     final String API_BASE =
         _userRepository.remoteConfig.getString('ulink_api_url');
     String reqUrl = API_BASE + API_LINKS;
-    AppUser appUser = _userRepository.sharedPrefUtils.prefsGetUser();
+    //AppUser appUser = _userRepository.sharedPrefUtils.prefsGetUser();
+    AppUser appUser = _userRepository.hiveStore.readAppUser();
+    //_userRepository.hiveStore.read(PREFKEYS[PREFKEY.APP_USER]);
 
     final response = await http.post(reqUrl,
         headers: {API_HEADER_TOKEN: 'Bearer ' + appUser.token},

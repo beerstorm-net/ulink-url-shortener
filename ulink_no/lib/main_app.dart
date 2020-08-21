@@ -36,7 +36,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
 
-    appLocale = widget._userRepository.sharedPrefUtils.prefsGetLocale();
+    //appLocale = widget._userRepository.sharedPrefUtils.prefsGetLocale();
+    appLocale = widget._userRepository.hiveStore.readAppLocale();
+    //widget._userRepository.hiveStore.read(PREFKEYS[PREFKEY.APP_LANGCODE]);
 
     // listen to AppLifecycleState
     WidgetsBinding.instance.addObserver(this);

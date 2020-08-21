@@ -60,3 +60,16 @@ class WarnUserState extends AuthState {
   String toString() =>
       'WarnUserState { actions: $actions, message: $message, duration: $duration }';
 }
+
+class RefreshTokenState extends AuthState {
+  final AppUser appUser;
+  final bool isRefreshed;
+
+  const RefreshTokenState({this.appUser, this.isRefreshed});
+  @override
+  List<Object> get props => [isRefreshed, appUser];
+
+  @override
+  String toString() =>
+      'RefreshTokenState { isRefreshed: $isRefreshed | appUser: $appUser }';
+}

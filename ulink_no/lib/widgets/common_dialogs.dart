@@ -1,4 +1,5 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -157,6 +158,15 @@ showAlertDialog(context, String message,
     autoHide: autoHide,
   );
   _awesomeDialog.show();
+}
+
+showBasicAlertDialog(context, String title, String content) {
+  showDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+            title: Text(title),
+            content: Text(content),
+          ));
 }
 
 buildProgressDialog(context, String message,

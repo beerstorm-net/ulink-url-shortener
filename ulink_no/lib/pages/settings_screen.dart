@@ -37,7 +37,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (appLocale == null) {
       if (this.mounted == true) {
         setState(() {
-          appLocale = _userRepository.sharedPrefUtils.prefsGetLocale();
+          //appLocale = _userRepository.sharedPrefUtils.prefsGetLocale();
+          appLocale = _userRepository.hiveStore.readAppLocale();
+          //_userRepository.hiveStore.read(PREFKEYS[PREFKEY.APP_LANGCODE]);
         });
       }
     }
@@ -52,8 +54,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     if (packageInfo == null) {
-      _userRepository.getPackageInfo().then((_packageInfo) => this.mounted ==
-              true
+      CommonUtils.getPackageInfo().then((_packageInfo) => this.mounted == true
           ? setState(() {
               packageInfo = _packageInfo;
             })
