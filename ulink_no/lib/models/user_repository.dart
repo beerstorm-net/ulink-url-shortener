@@ -87,7 +87,7 @@ class UserRepository {
           await googleUser.authentication;
       if (googleAuth.accessToken != null && googleAuth.idToken != null) {
         final UserCredential authResult = await _firebaseAuth
-            .signInWithCredential(GoogleAuthProvider.getCredential(
+            .signInWithCredential(GoogleAuthProvider.credential(
           idToken: googleAuth.idToken,
           accessToken: googleAuth.accessToken,
         ));
@@ -145,8 +145,7 @@ class UserRepository {
         final authResult = await _firebaseAuth.signInWithCredential(credential);
         final firebaseUser = authResult.user;
         //CommonUtils.logger.d(firebaseUser);
-        CommonUtils.logger.d(
-            'appleIdCredential response: ${appleIdCredential.toMap().toString()}');
+        //CommonUtils.logger.d('appleIdCredential response: ${appleIdCredential.toMap().toString()}');
         if (appleIdCredential.fullName != null) {
           String displayName =
               '${CommonUtils.nullSafe(appleIdCredential.fullName.givenName)}';
@@ -324,7 +323,7 @@ class UserRepository {
   }
 
   Future<bool> isSignedIn() async {
-    final currentUser = await _firebaseAuth.currentUser;
+    final currentUser = _firebaseAuth.currentUser;
     return currentUser != null;
   }
 
@@ -365,7 +364,7 @@ class UserRepository {
       /* displayName: user.displayName.nullSafeString,
       photoUrl: user.photoUrl.nullSafeString, */
       displayName: CommonUtils.nullSafe(user.displayName),
-      photoUrl: CommonUtils.nullSafe(user.photoUrl),
+      photoUrl: CommonUtils.nullSafe(user.photoURL),
     );
 
     CommonUtils.logger.d('appleFullName: ${appleFullName.toString()}');
@@ -390,7 +389,8 @@ class UserRepository {
     if (userDoc.docs.isEmpty) {
       CommonUtils.logger.d('new user will be added...');
       appUser.createdAt = CommonUtils.getFormattedDate();
-      await usersCollection.add(appUser.toJson());
+      //await usersCollection.add(appUser.toJson());
+      await usersCollection.doc(appUser.uid).set(appUser.toJson());
     }
 
     _hiveStore.save(PREFKEYS[PREFKEY.APP_USERID], appUser.uid);

@@ -1,3 +1,6 @@
+// used for AppNavigator
+enum APP_PAGE { LINK, LINKS, SETTINGS }
+
 // used for AuthBloc
 enum ORIGIN {
   LOGIN,

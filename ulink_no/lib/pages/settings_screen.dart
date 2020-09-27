@@ -70,13 +70,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         appLocale = state.appLocale;
       }
 
-      return Scaffold(
-        key: const ValueKey('ui_settings'),
-        appBar: AppBar(
-            title: Text(
-          AppLocalizations.of(context).translate("settings"),
-        )),
-        body: SettingsList(
+      return Container(
+        child: SettingsList(
           //backgroundColor: Colors.blueGrey.withAlpha(122),
           /*TODO: colors: SettingsColors(
             backgroundColor: Colors.white, //.blueGrey.withAlpha(122),

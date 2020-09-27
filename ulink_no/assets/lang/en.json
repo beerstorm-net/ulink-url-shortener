@@ -47,6 +47,9 @@
     "settings_ratemyapp": "Rate My App",
     "settings_version": "Version",
 
+    "settings_sharemyapp": "Share This App",
+    "sharemyapp_text": "Don't let your memories slip away, use Fabulam! APP_URL",
+
     "settings_lang_en": "English",
     "settings_lang_tr": "Türkçe (Türkiye)",
     "settings_lang_nb": "Norsk bokmål",
@@ -55,5 +58,9 @@
     "warning_signin_error": "SignInError",
     "warning_signin_aborted": "SignIn aborted",
     "warning_signin_failed": "SignIn failed",
-    "warning_apple_signin_notavailable": "Apple SignIn not available..."
+    "warning_apple_signin_notavailable": "Apple SignIn not available...",
+
+    "app_page_link": "Shorten",
+    "app_page_links": "My Links",
+    "app_page_settings": "Settings"
 }

@@ -47,6 +47,9 @@
     "settings_ratemyapp": "Vurdere Appen",
     "settings_version": "Versjon",
 
+    "settings_sharemyapp": "Dele Appen",
+    "sharemyapp_text": "Ikke la minnene dine forsvinne, bruk Fabulam! APP_URL",
+
     "settings_lang_en": "English",
     "settings_lang_tr": "Türkçe (Türkiye)",
     "settings_lang_nb": "Norsk bokmål",
@@ -55,5 +58,9 @@
     "warning_signin_error": "SignInError",
     "warning_signin_aborted": "SignIn abortert prøv igjen",
     "warning_signin_failed": "SignIn feilet prøv igjen",
-    "warning_apple_signin_notavailable": "Apple SignIn ikke tilgjengelig"
+    "warning_apple_signin_notavailable": "Apple SignIn ikke tilgjengelig",
+
+    "app_page_link": "Forkorte",
+    "app_page_links": "Mine Linker",
+    "app_page_settings": "Innstillinger"
 }

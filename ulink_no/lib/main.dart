@@ -9,11 +9,14 @@ import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:sentry/sentry.dart';
 
+import 'blocs/app_navigator/app_navigator_bloc.dart';
 import 'blocs/auth/auth_bloc.dart';
+import 'blocs/links/links_bloc.dart';
 import 'blocs/settings/settings_bloc.dart';
 import 'blocs/settings/settings_event.dart';
 import 'blocs/simple_bloc_observer.dart';
 import 'main_app.dart';
+import 'models/link_repository.dart';
 import 'models/user_repository.dart';
 import 'shared/common_utils.dart';
 import 'shared/shared_preferences.dart';
@@ -42,14 +45,10 @@ Future<void> main() async {
   // Enable developer mode to relax fetch throttling
   //_remoteConfig.setConfigSettings(RemoteConfigSettings(debugMode: !isPhysicalDevice));
   // optional: set defaults as backup
-  _remoteConfig.setDefaults(<String, dynamic>{
-    'ulink_api_url': 'https://api.ulink.no',
-    'app_link': 'https://www.ulink.no/app',
-    'app_web': 'https://www.ulink.no/web',
-    'app_privacy': 'https://www.ulink.no/privacy',
-    'appStoreIdentifier': 'TODO',
-    'googlePlayIdentifier': 'net.beerstorm.ulink' // for future use
-  });
+  Map<String, dynamic> remoteConfigDefaults =
+      await CommonUtils.parseJsonFromAssets(
+          'assets/config/remoteconfig_defaults.json');
+  _remoteConfig.setDefaults(remoteConfigDefaults);
 
   //_sharedPref.clear();
 
@@ -59,7 +58,6 @@ Future<void> main() async {
   }
 
   _pushErrorToSentry({Object error, StackTrace stackTrace}) {
-    /* // FIXME: enable sentry before publishing!!!
     if (_sentry != null) {
       try {
         _sentry.captureException(
@@ -72,7 +70,6 @@ Future<void> main() async {
         CommonUtils.logger.e('Original error: $error');
       }
     }
-    */
   }
 
   final UserRepository _userRepository = UserRepository(
@@ -80,6 +77,9 @@ Future<void> main() async {
       sharedPref: _sharedPref,
       remoteConfig: _remoteConfig,
       hiveBox: _hiveBox);
+
+  final LinkRepository _linkRepository =
+      LinkRepository(userRepository: _userRepository);
 
   //_userRepository.sharedPref().clear();
   //Locale appLocale = _userRepository.sharedPrefUtils.prefsGetLocale();
@@ -102,8 +102,10 @@ Future<void> main() async {
     // dumps errors to console
     FlutterError.dumpErrorToConsole(errorDetails);
 
-    _pushErrorToSentry(
-        error: errorDetails.exception, stackTrace: errorDetails.stack);
+    if (!CommonUtils.isDebug) {
+      _pushErrorToSentry(
+          error: errorDetails.exception, stackTrace: errorDetails.stack);
+    }
 
     // re-throws error so that `runZoned` handles it
     throw errorDetails;
@@ -120,12 +122,20 @@ Future<void> main() async {
             userRepository: _userRepository,
           )..add(AppStartedEvent()),
         ),
+        BlocProvider<AppNavigatorBloc>(
+            lazy: false, create: (context) => AppNavigatorBloc()),
         BlocProvider<SettingsBloc>(
           lazy: false,
           create: (context) => SettingsBloc(
             userRepository: _userRepository,
           )..add(AppLocaleEvent(appLocale)),
         ),
+        BlocProvider<LinksBloc>(
+            lazy: false,
+            create: (context) => LinksBloc(
+                  linkRepository: _linkRepository,
+                )),
+
         // NB! add more BlocProviders when necessary
       ],
       child: MainApp(
@@ -140,8 +150,10 @@ Future<void> main() async {
     Crashlytics.instance.log(_error.toString());
     Crashlytics.instance.recordError(_error, _stackTrace);
 
-    // using Sentry
-    _pushErrorToSentry(error: _error, stackTrace: _stackTrace);
+    if (!CommonUtils.isDebug) {
+      // using Sentry
+      _pushErrorToSentry(error: _error, stackTrace: _stackTrace);
+    }
 
     /* // TODO: enable this if we want to ask user to explicitly send error
     // Since the state can be null, we use `?.` to verify if it is null. If it is null, we don't do anything, if it is NOT null, we call the `push` function on it

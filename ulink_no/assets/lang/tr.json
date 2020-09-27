@@ -47,6 +47,9 @@
     "settings_ratemyapp": "Uygulamaya Puan Ver",
     "settings_version": "Versiyon",
 
+    "settings_sharemyapp": "Uygulamayı Paylaş",
+    "sharemyapp_text": "Fabulam kişisel bir günlük, anılarınızı koruyan bir arkadaş. APP_URL",
+
     "settings_lang_en": "English",
     "settings_lang_tr": "Türkçe (Türkiye)",
     "settings_lang_nb": "Norsk bokmål",
@@ -55,5 +58,9 @@
     "warning_signin_error": "SignInError",
     "warning_signin_aborted": "SignIn iptal",
     "warning_signin_failed": "SignIn hatası",
-    "warning_apple_signin_notavailable": "Apple SignIn desteklenmiyor"
+    "warning_apple_signin_notavailable": "Apple SignIn desteklenmiyor",
+
+    "app_page_link": "Kısalt",
+    "app_page_links": "Linklerim",
+    "app_page_settings": "Ayarlar"
 }

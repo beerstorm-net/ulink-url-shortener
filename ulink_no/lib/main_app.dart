@@ -132,9 +132,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             ],
             title: 'uLINK',
             theme: ThemeData(
-              primarySwatch: Colors.blueGrey,
-              primaryColor: Colors.blueGrey, //.amber,
-              accentColor: Colors.grey, //.amberAccent,
+              primarySwatch: Colors.deepOrange,
+              primaryColor: Colors.deepOrange,
+              accentColor: Colors.orange,
 
               // This makes the visual density adapt to the platform that you run
               // the app on. For desktop platforms, the controls will be smaller and

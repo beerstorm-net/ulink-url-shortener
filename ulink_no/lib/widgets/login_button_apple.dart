@@ -1,4 +1,4 @@
-import 'package:apple_sign_in/apple_sign_in.dart';
+import 'package:apple_sign_in/apple_sign_in.dart' as AppleSignin;
 import 'package:flutter/material.dart';
 
 import '../shared/app_localizations.dart';
@@ -9,11 +9,11 @@ class LoginButtonApple extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppleSignInButton(
+    return AppleSignin.AppleSignInButton(
       buttonKey: const ValueKey('apple_signin'),
-      style: ButtonStyle.whiteOutline,
+      style: AppleSignin.ButtonStyle.whiteOutline,
       //cornerRadius: 28,
-      type: ButtonType.continueButton,
+      type: AppleSignin.ButtonType.continueButton,
       buttonText: AppLocalizations.of(context).translate('apple_signin_button'),
       onPressed: () {
         this.onPressed();
