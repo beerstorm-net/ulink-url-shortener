@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ulink/blocs/app_navigator/app_navigator_bloc.dart';
+import 'package:ulink/blocs/links/links_bloc.dart';
+import 'package:ulink/models/app_link.dart';
+import 'package:ulink/shared/app_defaults.dart';
 import 'package:ulink/shared/common_utils.dart';
+import 'package:ulink/widgets/common_dialogs.dart';
 
 import '../models/user_repository.dart';
 
@@ -19,13 +24,28 @@ class _LinkScreenState extends State<LinkScreen> {
     _userRepository =
         _userRepository ?? RepositoryProvider.of<UserRepository>(buildContext);
 
-    return Container(
-      alignment: Alignment.center,
-      padding: EdgeInsets.all(4.0),
-      child: Center(
-        child: _linkEditorForm(buildContext),
-      ),
-    );
+    return BlocListener<LinksBloc, LinksState>(
+        listenWhen: (prevState, currState) {
+          return currState is LinkAdded;
+        },
+        listener: (context, state) {
+          CommonUtils.logger.d('state: $state');
+          showAlertDialog(context, "Link created successfully!",
+              type: "SUCCESS");
+
+          BlocProvider.of<AppNavigatorBloc>(context)
+              .add(AppPageEvent(tab: APP_PAGE.LINKS));
+          BlocProvider.of<LinksBloc>(context).add(LoadLinksEvent());
+        },
+        child: Container(
+            alignment: Alignment.center,
+            padding: EdgeInsets.all(4.0),
+            child: Padding(
+              padding: EdgeInsets.only(top: 32, left: 4.0, right: 4.0),
+              child: Center(
+                child: _linkEditorForm(buildContext),
+              ),
+            )));
   }
 
   Map<String, dynamic> _formInput = new Map();
@@ -57,8 +77,8 @@ class _LinkScreenState extends State<LinkScreen> {
             cursorColor: Colors.deepOrange,
             style: TextStyle(color: Colors.deepOrangeAccent),
             decoration: const InputDecoration(
-              icon:
-                  Icon(Icons.http, size: 24.0, color: Colors.deepOrangeAccent),
+              icon: Icon(Icons.http_rounded,
+                  size: 24.0, color: Colors.deepOrangeAccent),
               hintText: 'Paste a long link (URL)',
               hintStyle: TextStyle(
                   color: Colors.deepOrangeAccent, fontStyle: FontStyle.normal),
@@ -85,6 +105,9 @@ class _LinkScreenState extends State<LinkScreen> {
               //CommonUtils.logger.d('${_formKey.currentState}');
               if (_formKey.currentState.validate()) {
                 CommonUtils.logger.d('form VALID... $_formInput');
+
+                BlocProvider.of<LinksBloc>(context)
+                    .add(AddLinkEvent(AppLink.fromFormInput(_formInput)));
               } else {
                 CommonUtils.logger.d('form INVALID...  $_formInput');
               }

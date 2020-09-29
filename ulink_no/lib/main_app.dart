@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 import 'blocs/data_connectivity_service.dart';
 import 'blocs/settings/settings_bloc.dart';
@@ -123,6 +124,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             localizationsDelegates: [
               // A class which loads the translations from JSON files
               AppLocalizations.delegate,
+              RefreshLocalizations.delegate,
               // Built-in localization of basic text for Material widgets
               GlobalMaterialLocalizations.delegate,
               // Built-in localization for text direction LTR/RTL

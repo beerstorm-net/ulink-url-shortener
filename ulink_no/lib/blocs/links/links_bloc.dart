@@ -23,11 +23,18 @@ class LinksBloc extends Bloc<LinksEvent, LinksState> {
   Stream<LinksState> mapEventToState(LinksEvent event) async* {
     if (event is LoadLinksEvent) {
       yield* _loadLinksToState(event);
+    } else if (event is AddLinkEvent) {
+      yield* _addLinkToState(event);
     }
   }
 
   Stream<LinksState> _loadLinksToState(LinksEvent event) async* {
     List<AppLink> links = await _linkRepository.loadLinks();
     yield LinksLoaded(links);
+  }
+
+  Stream<LinksState> _addLinkToState(AddLinkEvent event) async* {
+    AppLink link = await _linkRepository.addLink(appLink: event.link);
+    yield LinkAdded(link);
   }
 }

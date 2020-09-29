@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ulink/blocs/app_navigator/app_navigator_bloc.dart';
 import 'package:ulink/blocs/auth/auth_bloc.dart';
-import 'package:ulink/blocs/links/links_bloc.dart';
 import 'package:ulink/models/app_user.dart';
 import 'package:ulink/pages/link_screen.dart';
 import 'package:ulink/shared/app_defaults.dart';
@@ -102,10 +101,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           appBar: AppBar(
             backgroundColor: Colors.white,
             leading: IconButton(
-              //icon: Icon(Icons.menu_rounded),
-              icon: Image.asset(
-                "assets/images/app/app_icon.png",
+              icon: Icon(
+                _globalKeyHome.currentState.isDrawerOpen
+                    ? Icons.menu_open
+                    : Icons.menu_rounded,
+                color: Colors.blueGrey.withAlpha(166),
+                size: 36,
               ),
+              /*icon: Image.asset(
+                "assets/images/app/app_icon.png",
+              ),*/
               onPressed: () {
                 _globalKeyHome.currentState.openDrawer();
               },
@@ -190,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   onTap: () {
                     BlocProvider.of<AppNavigatorBloc>(context)
                         .add(AppPageEvent(tab: APP_PAGE.LINKS));
-                    BlocProvider.of<LinksBloc>(context).add(LoadLinksEvent());
+                    //BlocProvider.of<LinksBloc>(context).add(LoadLinksEvent());
 
                     Navigator.pop(context);
                   },

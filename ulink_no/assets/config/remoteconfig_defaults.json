@@ -1,5 +1,6 @@
 {
   "ulink_api_url": "https://api.ulink.no",
+  "ulink_base_url": "https://ulink.no",
   "app_link": "https://www.ulink.no/app",
   "app_web": "https://www.ulink.no/web",
   "app_privacy": "https://www.ulink.no/privacy",

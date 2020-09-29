@@ -21,3 +21,14 @@ class LinksLoaded extends LinksState {
   String toString() => 'LinksLoaded { links: $links }';
 }
 
+class LinkAdded extends LinksState {
+  final AppLink link;
+
+  LinkAdded(this.link);
+
+  @override
+  List<Object> get props => [link];
+
+  @override
+  String toString() => 'LinkAdded { link: $link }';
+}

@@ -23,8 +23,9 @@ class LinkRepository {
     final String API_BASE =
         _userRepository.remoteConfig.getString('ulink_api_url');
     String reqUrl = API_BASE + API_LINKS;
-    reqUrl += reqUrl.contains('?') ? "&" : "?";
-    reqUrl += "page=" + page.toString();
+    // FIXME: validate paging works on API as well!!
+    //reqUrl += reqUrl.contains('?') ? "&" : "?";
+    //reqUrl += "page=" + page.toString();
     //AppUser appUser = _userRepository.sharedPrefUtils.prefsGetUser();
     AppUser appUser = _userRepository.hiveStore.readAppUser();
     //_userRepository.hiveStore.read(PREFKEYS[PREFKEY.APP_USER]);
@@ -33,9 +34,10 @@ class LinkRepository {
         .get(reqUrl, headers: {API_HEADER_TOKEN: 'Bearer ' + appUser.token});
 
     List<AppLink> links = List();
+    List<dynamic> responseJson;
     if (response.statusCode <= 201) {
       Map<String, dynamic> responseBody = json.decode(response.body);
-      List<dynamic> responseJson = responseBody.containsKey('data')
+      responseJson = responseBody.containsKey('data')
           ? responseBody['data'] as List<dynamic>
           : List();
       links = responseJson.map((linkMap) => AppLink.fromJson(linkMap)).toList();
@@ -55,9 +57,13 @@ class LinkRepository {
     AppUser appUser = _userRepository.hiveStore.readAppUser();
     //_userRepository.hiveStore.read(PREFKEYS[PREFKEY.APP_USER]);
 
+    var reqBody = jsonEncode(appLink.toRequestJson());
     final response = await http.post(reqUrl,
-        headers: {API_HEADER_TOKEN: 'Bearer ' + appUser.token},
-        body: appLink.toRequestJson());
+        headers: {
+          API_HEADER_TOKEN: 'Bearer ' + appUser.token,
+          'Content-Type': 'application/json'
+        },
+        body: reqBody);
 
     if (response.statusCode <= 201) {
       Map<String, dynamic> responseJson = json.decode(response.body);

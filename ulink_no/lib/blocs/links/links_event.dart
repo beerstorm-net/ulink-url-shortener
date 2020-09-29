@@ -10,13 +10,13 @@ abstract class LinksEvent extends Equatable {
 class LoadLinksEvent extends LinksEvent {}
 
 class AddLinkEvent extends LinksEvent {
-  final List<AppLink> links;
+  final AppLink link;
 
-  AddLinkEvent(this.links);
-
-  @override
-  List<Object> get props => [links];
+  AddLinkEvent(this.link);
 
   @override
-  String toString() => 'AddLinkEvent { links: $links }';
+  List<Object> get props => [link];
+
+  @override
+  String toString() => 'AddLinkEvent { link: $link }';
 }

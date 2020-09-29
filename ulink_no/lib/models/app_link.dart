@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class AppLink {
   String id;
   String createdAt;
@@ -36,10 +38,34 @@ class AppLink {
     return data;
   }
 
+  @override
+  String toString() {
+    return toJson().toString();
+  }
+
   Map<String, dynamic> toRequestJson() {
     Map<String, dynamic> data = Map();
     data['long_link'] = this.long_link;
     data['simple_links'] = this.simple_links;
     return data;
+  }
+
+  static AppLink fromFormInput(Map<String, dynamic> formInput) {
+    AppLink appLink = AppLink();
+
+    appLink.long_link = formInput['long_link'] as String;
+    if (formInput.containsKey('simple_links')) {
+      appLink.simple_links = formInput['simple_links'] as List;
+    }
+
+    return appLink;
+  }
+
+  static AppLink fromSnapshot(DocumentSnapshot snap) {
+    AppLink appLink = AppLink();
+
+    // TODO: map from firestore data!!!
+
+    return appLink;
   }
 }
